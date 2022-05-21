@@ -1,7 +1,7 @@
 require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 const app = express()
@@ -31,6 +31,16 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
             const result = await collectionProduct.find({}).toArray()
 
+
+            res.send(result)
+
+
+        })
+
+
+        app.get('/product/:partId', async (req, res) => {
+            const { partId } = req.params
+            const result = await collectionProduct.findOne({ _id: ObjectId(partId) })
 
             res.send(result)
 
