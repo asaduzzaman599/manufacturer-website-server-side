@@ -21,6 +21,44 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
     try {
         await client.connect()
         console.log('DB Connected')
+
+        //collections
+        const collectionProduct = client.db('vehicle_portion_db').collection('product')
+
+        //product rest api
+
+        app.get('/product', async (req, res) => {
+
+            const result = await collectionProduct.find({}).toArray()
+
+
+            res.send(result)
+
+
+        })
+
+        app.post('/product', async (req, res) => {
+            const body = req.body;
+            console.log(body)
+            if (!body?.name || !body?.price || !body?.description || !body?.quantity || !body?.minimumOrder || !body?.img) {
+                res.send({ success: false, message: 'Please provide all informations' })
+            }
+
+            const result = await collectionProduct.insertOne(body);
+
+            if (result?.insertedId) {
+                res.send({ success: true, result })
+            } else {
+                res.send({ success: false, message: 'Something went wrong' })
+            }
+
+
+            res.send(result)
+
+
+        })
+
+
     } finally {
 
     }
