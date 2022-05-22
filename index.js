@@ -28,6 +28,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         const collectionProduct = db.collection('product')
         const collectionUser = db.collection('user')
         const collectionOrder = db.collection('order')
+        const collectionReview = db.collection('review')
         app.get('/admin', async (req, res) => {
             const { email } = req.query
 
@@ -159,6 +160,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
             const result = await collectionOrder.insertOne(body)
 
+            //updating the product data
             if (result.insertedId) {
                 const filter = {
                     _id: ObjectId(body.productId)
@@ -177,6 +179,50 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send({ success: true, result })
 
 
+        })
+
+        app.get('/order', async (req, res) => {
+            const email = req.query.email
+            const query = {
+                email: email
+            }
+            const result = await collectionOrder.find(query).toArray()
+
+            res.send(result)
+        })
+
+        app.delete('/order/:orderId', async (req, res) => {
+            const { orderId } = req.params
+
+            const query = {
+                _id: ObjectId(orderId)
+            }
+
+            const result = await collectionOrder.deleteOne(query)
+
+            res.send(result)
+        })
+
+
+        //Review
+
+        app.post('/review', async (req, res) => {
+            const body = req.body;
+
+            if (!body.name || !body.email || !body.rating || !body.description) {
+                return res.send({ success: false, message: "Please provide all information" })
+            }
+
+            const result = await collectionReview.insertOne(body)
+
+            res.send({ success: true, result })
+        })
+
+        app.get('/review', async (req, res) => {
+
+            const result = await collectionReview.find().toArray()
+
+            res.send(result)
         })
 
 
