@@ -28,17 +28,28 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         const collectionUser = client.db('vehicle_portion_db').collection('user')
 
 
-        //User Api
 
-        app.put('/user', async (req, res) => {
+        //User Api
+        app.put('/user/:email', async (req, res) => {
             const body = req.body
-            const email = body.email
+            const { email } = req.params
             if (!email && !body?.name) {
                 return
             }
             console.log(body)
 
+            const filter = {
+                email: email
+            }
+            const updateDoc = {
+                $set: body
+            }
+            const option = {
+                upsert: true
+            }
+            const result = await collectionUser.updateOne(filter, updateDoc, option)
 
+            console.log(result)
             //jwt token issue
             const token = jwt.sign({
                 email
@@ -46,6 +57,27 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
             res.send({ success: true, accessToken: token })
 
+        })
+
+        app.get('/user', async (req, res) => {
+            const users = await collectionUser.find().toArray()
+
+            res.send(users)
+        })
+
+        app.put('/admin/:userId', async (req, res) => {
+            const { userId } = req.params
+            const filter = {
+                _id: ObjectId(userId)
+            }
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+
+            const result = await collectionUser.updateOne(filter, updateDoc)
+            res.send(result)
         })
 
         //product rest api
