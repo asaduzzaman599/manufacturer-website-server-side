@@ -123,6 +123,18 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
+        app.delete('/product/:productId', async (req, res) => {
+            const { productId } = req.params
+
+            const query = {
+                _id: ObjectId(productId)
+            }
+
+            const result = await collectionProduct.deleteOne(query)
+
+            res.send(result)
+        })
+
 
     } finally {
 
