@@ -24,9 +24,24 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         console.log('DB Connected')
 
         //collections
-        const collectionProduct = client.db('vehicle_portion_db').collection('product')
-        const collectionUser = client.db('vehicle_portion_db').collection('user')
+        const db = client.db('vehicle_portion_db');
+        const collectionProduct = db.collection('product')
+        const collectionUser = db.collection('user')
+        const collectionOrder = db.collection('order')
+        app.get('/admin', async (req, res) => {
+            const { email } = req.query
 
+            const query = {
+                email: email
+            }
+            console.log('gfhgfhgfh')
+            const user = await collectionUser.findOne(query)
+            console.log(user)
+            if (user?.role === 'admin') {
+                console.log(true)
+                res.send({ success: true, admin: true })
+            }
+        })
 
 
         //User Api
@@ -104,7 +119,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         app.post('/product', async (req, res) => {
             const body = req.body;
-            console.log(body)
             if (!body?.name || !body?.price || !body?.description || !body?.quantity || !body?.minimumOrder || !body?.img) {
                 res.send({ success: false, message: 'Please provide all informations' })
             }
@@ -118,7 +132,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             }
 
 
-            res.send(result)
 
 
         })
@@ -133,6 +146,37 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const result = await collectionProduct.deleteOne(query)
 
             res.send(result)
+        })
+
+        //purchase order
+        app.post('/order', async (req, res) => {
+
+            const body = req.body
+
+            if (!body?.name || !body?.email || !body?.address || !body?.phone || !body?.description || !body?.productId || !body?.product || !body?.orderQuantity || !body?.unitPrice || !body?.totalAmount) {
+                return res.send({ success: false, message: "Please Provide all information" })
+            }
+
+            const result = await collectionOrder.insertOne(body)
+
+            if (result.insertedId) {
+                const filter = {
+                    _id: ObjectId(body.productId)
+                }
+                const product = await collectionProduct.findOne(filter)
+                const quantity = parseInt(product.quantity) - parseInt(body.orderQuantity);
+
+                const updateDoc = {
+                    $set: { quantity }
+                }
+                console.log('before')
+                const updateResult = await collectionProduct.updateOne(filter, updateDoc)
+                console.log('updateResult', updateResult)
+
+            }
+            res.send({ success: true, result })
+
+
         })
 
 
