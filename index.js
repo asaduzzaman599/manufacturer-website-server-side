@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 
 
 const app = express()
@@ -24,6 +25,28 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         //collections
         const collectionProduct = client.db('vehicle_portion_db').collection('product')
+        const collectionUser = client.db('vehicle_portion_db').collection('user')
+
+
+        //User Api
+
+        app.put('/user', async (req, res) => {
+            const body = req.body
+            const email = body.email
+            if (!email && !body?.name) {
+                return
+            }
+            console.log(body)
+
+
+            //jwt token issue
+            const token = jwt.sign({
+                email
+            }, process.env.ACCESS_TOKEN, { expiresIn: '1d' })
+
+            res.send({ success: true, accessToken: token })
+
+        })
 
         //product rest api
 
