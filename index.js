@@ -4,6 +4,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const res = require('express/lib/response');
+const stripe = require("stripe")(process.env.SECRET_API_KEY);
 
 
 const app = express()
@@ -224,12 +225,22 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
-        app.get('/order', async (req, res) => {
+        app.get('/order', tokenVerify, async (req, res) => {
             const email = req.query.email
             const query = {
                 email: email
             }
             const result = await collectionOrder.find(query).toArray()
+
+            res.send(result)
+        })
+
+        app.get('/order/:orderId', tokenVerify, async (req, res) => {
+            const { orderId } = req.params
+            const query = {
+                _id: ObjectId(orderId)
+            }
+            const result = await collectionOrder.findOne(query)
 
             res.send(result)
         })
@@ -274,6 +285,22 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(result)
         })
 
+        app.post("/create-payment-intent", async (req, res) => {
+            const { totalAmount } = req.body;
+
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: totalAmount,
+                currency: "usd",
+                automatic_payment_methods: [
+                    "card"
+                ],
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
 
     } finally {
 
