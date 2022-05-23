@@ -73,7 +73,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         }
 
-        app.get('/admin', tokenVerify, isAdmin, async (req, res) => {
+        app.get('/admin', tokenVerify, async (req, res) => {
             const { email } = req.query
 
             const query = {
@@ -82,8 +82,9 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const user = await collectionUser.findOne(query)
 
             if (user?.role === 'admin') {
-                console.log(true)
                 res.send({ success: true, admin: true })
+            } else {
+                res.send({ success: false, admin: false })
             }
         })
 
@@ -96,7 +97,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             if (!email && !body?.name) {
                 return
             }
-            console.log(body)
 
             const filter = {
                 email: email
@@ -109,7 +109,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             }
             const result = await collectionUser.updateOne(filter, updateDoc, option)
 
-            console.log(result)
             //jwt token issue
             const token = jwt.sign({
                 email
@@ -142,11 +141,15 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         //********** product Api************//
         app.get('/product', async (req, res) => {
+            const limit = req.query.limit;
 
-            const result = await collectionProduct.find({}).toArray()
+            const result = await collectionProduct.find({}).sort({ _id: -1 }).toArray()
 
-
-            res.send(result)
+            if (limit) {
+                res.send(result.slice(0, +limit))
+            } else {
+                res.send(result)
+            }
 
 
         })
@@ -214,9 +217,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
                 const updateDoc = {
                     $set: { quantity }
                 }
-                console.log('before')
                 const updateResult = await collectionProduct.updateOne(filter, updateDoc)
-                console.log('updateResult', updateResult)
 
             }
             res.send({ success: true, result })
@@ -273,7 +274,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
                 $set: body
             }
             const result = await collectionOrder.updateOne(filter, updateDoc)
-            console.log(result)
             res.send(result)
         })
 
@@ -294,14 +294,12 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         app.get('/review', async (req, res) => {
 
-            const result = await collectionReview.find().toArray()
-
-            res.send(result)
+            const result = await collectionReview.find().sort({ _id: -1 }).toArray()
+            res.send(result.slice(0, 6))
         })
 
         app.post("/create-payment-intent", async (req, res) => {
             const { totalAmount } = req.body;
-            console.log(totalAmount)
             const amount = +totalAmount * 100
 
             // Create a PaymentIntent with the order amount and currency
