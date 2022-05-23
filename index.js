@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const res = require('express/lib/response');
 
 
 const app = express()
@@ -12,9 +13,33 @@ const port = process.env.PORT || 5000;
 app.use(cors())
 app.use(express.json())
 
+
+const tokenVerify = (req, res, next) => {
+    const email = req.query.email
+    const authorization = req.headers?.authorization
+    if (!email) {
+        return
+    }
+    if (!authorization) {
+        return res.send({ message: "unAuthorized" })
+    }
+    const token = authorization.split(' ')[1]
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.send({ message: "unAuthorized" })
+        }
+        if (email === decoded.email) {
+            next()
+        }
+
+    });
+}
+
+
 //mongoDB
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.8uvbg.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
 
 
 
@@ -29,15 +54,33 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         const collectionUser = db.collection('user')
         const collectionOrder = db.collection('order')
         const collectionReview = db.collection('review')
-        app.get('/admin', async (req, res) => {
+
+
+        //************* Admin ***********//
+
+        const isAdmin = async (req, res, next) => {
             const { email } = req.query
 
             const query = {
                 email: email
             }
-            console.log('gfhgfhgfh')
             const user = await collectionUser.findOne(query)
-            console.log(user)
+
+            if (user?.role === 'admin') {
+
+                next()
+            }
+
+        }
+
+        app.get('/admin', tokenVerify, isAdmin, async (req, res) => {
+            const { email } = req.query
+
+            const query = {
+                email: email
+            }
+            const user = await collectionUser.findOne(query)
+
             if (user?.role === 'admin') {
                 console.log(true)
                 res.send({ success: true, admin: true })
@@ -45,7 +88,8 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         })
 
 
-        //User Api
+        //********** User Api************//
+
         app.put('/user/:email', async (req, res) => {
             const body = req.body
             const { email } = req.params
@@ -96,8 +140,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(result)
         })
 
-        //product rest api
-
+        //********** product Api************//
         app.get('/product', async (req, res) => {
 
             const result = await collectionProduct.find({}).toArray()
@@ -118,7 +161,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
-        app.post('/product', async (req, res) => {
+        app.post('/product', tokenVerify, isAdmin, async (req, res) => {
             const body = req.body;
             if (!body?.name || !body?.price || !body?.description || !body?.quantity || !body?.minimumOrder || !body?.img) {
                 res.send({ success: false, message: 'Please provide all informations' })
@@ -137,7 +180,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
-        app.delete('/product/:productId', async (req, res) => {
+        app.delete('/product/:productId', tokenVerify, isAdmin, async (req, res) => {
             const { productId } = req.params
 
             const query = {
@@ -187,6 +230,12 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
                 email: email
             }
             const result = await collectionOrder.find(query).toArray()
+
+            res.send(result)
+        })
+
+        app.get('/allOrder', tokenVerify, isAdmin, async (req, res) => {
+            const result = await collectionOrder.find().toArray()
 
             res.send(result)
         })
