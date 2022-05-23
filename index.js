@@ -6,7 +6,6 @@ const jwt = require('jsonwebtoken');
 const res = require('express/lib/response');
 const stripe = require("stripe")(process.env.SECRET_API_KEY);
 
-console.log(process.env.SECRET_API_KEY)
 const app = express()
 const port = process.env.PORT || 5000;
 
