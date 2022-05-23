@@ -263,6 +263,21 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(result)
         })
 
+        app.put('/order/:orderId', async (req, res) => {
+            const { orderId } = req.params
+            const body = req.body
+
+            const filter = {
+                _id: ObjectId(orderId)
+            }
+            const updateDoc = {
+                $set: body
+            }
+            const result = await collectionOrder.updateOne(filter, updateDoc)
+            console.log(result)
+            res.send(result)
+        })
+
 
         //Review
 
