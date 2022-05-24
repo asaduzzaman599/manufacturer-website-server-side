@@ -124,6 +124,36 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(users)
         })
 
+        app.get('/user/:email', tokenVerify, async (req, res) => {
+            const { email } = req.params
+            const user = await collectionUser.findOne({ email })
+
+            if (!user) {
+                res.send({ success: false, message: "user Not Found" })
+            }
+            else {
+                res.send({ success: true, user })
+            }
+        })
+        app.patch('/user/:email', tokenVerify, async (req, res) => {
+            const { email } = req.params
+            const userInfo = req.body;
+            console.log(userInfo)
+            if (!userInfo?.phone || !userInfo?.location || !userInfo?.education || !userInfo?.linkedin) {
+                return res.send({ success: false, message: "Please Provide all informations" })
+            }
+
+            const filter = { email }
+            const updateDoc = {
+                $set: userInfo
+            }
+            const result = await collectionUser.updateOne(filter, updateDoc)
+
+            res.send(result)
+            console.log(result)
+
+        })
+
         app.put('/admin/:userId', async (req, res) => {
             const { userId } = req.params
             const filter = {
