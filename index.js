@@ -13,7 +13,7 @@ const port = process.env.PORT || 5000;
 app.use(cors())
 app.use(express.json())
 
-
+//jwt token verify
 const tokenVerify = (req, res, next) => {
     const email = req.query.email
     const authorization = req.headers?.authorization
@@ -21,12 +21,12 @@ const tokenVerify = (req, res, next) => {
         return
     }
     if (!authorization) {
-        return res.send({ message: "unAuthorized" })
+        return res.status(401).send({ message: "unAuthorized" })
     }
     const token = authorization.split(' ')[1]
     jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
         if (err) {
-            return res.send({ message: "unAuthorized" })
+            return res.status(403).send({ message: "forbidden" })
         }
         if (email === decoded.email) {
             next()
@@ -72,7 +72,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             }
 
         }
-
+        //check admin or not
         app.get('/admin', tokenVerify, async (req, res) => {
             const { email } = req.query
 
@@ -91,7 +91,8 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         //********** User Api************//
 
-        app.put('/user/:email', async (req, res) => {
+        //update user data
+        app.put('/user/:email', tokenVerify, async (req, res) => {
             const body = req.body
             const { email } = req.params
             if (!email && !body?.name) {
@@ -118,7 +119,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
-
+        //get all user data
         app.get('/user', tokenVerify, isAdmin, async (req, res) => {
             const users = await collectionUser.find().toArray()
 
