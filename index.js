@@ -118,12 +118,14 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
-        app.get('/user', async (req, res) => {
+
+        app.get('/user', tokenVerify, isAdmin, async (req, res) => {
             const users = await collectionUser.find().toArray()
 
             res.send(users)
         })
 
+        //get specific user data
         app.get('/user/:email', tokenVerify, async (req, res) => {
             const { email } = req.params
             const user = await collectionUser.findOne({ email })
@@ -136,6 +138,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             }
         })
 
+        //updating user data
         app.patch('/user/:email', tokenVerify, async (req, res) => {
             const { email } = req.params
             const userInfo = req.body;
@@ -154,7 +157,8 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
-        app.put('/admin/:userId', async (req, res) => {
+        //update user role to admin
+        app.put('/admin/:userId', tokenVerify, isAdmin, async (req, res) => {
             const { userId } = req.params
             const filter = {
                 _id: ObjectId(userId)
@@ -170,6 +174,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         })
 
         //********** product Api************//
+        //get all product
         app.get('/product', async (req, res) => {
             const limit = req.query.limit;
 
@@ -184,7 +189,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
-
+        //get a specific product
         app.get('/product/:partId', async (req, res) => {
             const { partId } = req.params
             const result = await collectionProduct.findOne({ _id: ObjectId(partId) })
@@ -194,6 +199,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
+        //post a product 
         app.post('/product', tokenVerify, isAdmin, async (req, res) => {
             const body = req.body;
             if (!body?.name || !body?.price || !body?.description || !body?.quantity || !body?.minimumOrder || !body?.img) {
@@ -209,10 +215,10 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             }
 
 
-
-
         })
 
+
+        //delete product
         app.delete('/product/:productId', tokenVerify, isAdmin, async (req, res) => {
             const { productId } = req.params
 
@@ -224,6 +230,8 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
             res.send(result)
         })
+
+        //***************** Order ***************/
 
         //purchase order
         app.post('/order', async (req, res) => {
@@ -255,6 +263,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
         })
 
+        // get only one users order
         app.get('/order', tokenVerify, async (req, res) => {
             const email = req.query.email
             const query = {
@@ -265,6 +274,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(result)
         })
 
+        //get specific order
         app.get('/order/:orderId', tokenVerify, async (req, res) => {
             const { orderId } = req.params
             const query = {
@@ -275,13 +285,15 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(result)
         })
 
+        //get all order
         app.get('/allOrder', tokenVerify, isAdmin, async (req, res) => {
             const result = await collectionOrder.find().toArray()
 
             res.send(result)
         })
 
-        app.delete('/order/:orderId', async (req, res) => {
+        // update order
+        app.delete('/order/:orderId', tokenVerify, async (req, res) => {
             const { orderId } = req.params
 
             const query = {
@@ -293,7 +305,8 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send(result)
         })
 
-        app.put('/order/:orderId', async (req, res) => {
+        // update order
+        app.put('/order/:orderId', tokenVerify, async (req, res) => {
             const { orderId } = req.params
             const body = req.body
 
@@ -309,7 +322,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
         //Review
-
+        //review post
         app.post('/review', async (req, res) => {
             const body = req.body;
 
@@ -322,12 +335,16 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             res.send({ success: true, result })
         })
 
+        //get all review 
         app.get('/review', async (req, res) => {
 
             const result = await collectionReview.find().sort({ _id: -1 }).toArray()
             res.send(result)
         })
 
+        //************* Payment *************//
+
+        //Payment client secret
         app.post("/create-payment-intent", async (req, res) => {
             const { totalAmount } = req.body;
             const amount = +totalAmount * 100
