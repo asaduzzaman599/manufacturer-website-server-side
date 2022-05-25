@@ -135,12 +135,13 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
                 res.send({ success: true, user })
             }
         })
+
         app.patch('/user/:email', tokenVerify, async (req, res) => {
             const { email } = req.params
             const userInfo = req.body;
-            console.log(userInfo)
-            if (!userInfo?.phone || !userInfo?.location || !userInfo?.education || !userInfo?.linkedin) {
-                return res.send({ success: false, message: "Please Provide all informations" })
+
+            if (!userInfo?.phone && !userInfo?.location && !userInfo?.education && !userInfo?.linkedin) {
+                return res.send({ success: false, message: "Nothing to update" })
             }
 
             const filter = { email }
@@ -150,7 +151,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const result = await collectionUser.updateOne(filter, updateDoc)
 
             res.send(result)
-            console.log(result)
 
         })
 
@@ -325,7 +325,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         app.get('/review', async (req, res) => {
 
             const result = await collectionReview.find().sort({ _id: -1 }).toArray()
-            res.send(result.slice(0, 6))
+            res.send(result)
         })
 
         app.post("/create-payment-intent", async (req, res) => {
