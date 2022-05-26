@@ -300,6 +300,19 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const query = {
                 _id: ObjectId(orderId)
             }
+            //getting order with id
+            const order = await collectionOrder.findOne(query)
+            const productQuery = { _id: ObjectId(order.productId) }
+            const product = await collectionProduct.findOne(productQuery)
+
+            //order quantity restoring
+            const quantity = parseInt(product.quantity) + parseInt(order.orderQuantity)
+
+            const updateDoc = {
+                $set: { quantity }
+            }
+            //update deleted quantity
+            const updateQuantity = await collectionProduct.updateOne(productQuery, updateDoc)
 
             const result = await collectionOrder.deleteOne(query)
 
