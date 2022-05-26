@@ -92,7 +92,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
         //********** User Api************//
 
         //update user data
-        app.put('/user/:email', tokenVerify, async (req, res) => {
+        app.put('/user/:email', async (req, res) => {
             const body = req.body
             const { email } = req.params
             if (!email && !body?.name) {
